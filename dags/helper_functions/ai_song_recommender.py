@@ -27,9 +27,14 @@ class AISongRecommender():
         SELECT * LIMIT 10; 
         """ # CHANGE TO RETURN THE URIs
         df = db.create_pandas_table(query)
-        return df
+        return df.values
     
     def create_recommendations(self):
+        songs = self.get_recent_songs()
+        songs_dict = "" # load the pickle file
+
+        # matched_songs = [song for ]
+        model = self.model
         pass
 
 if __name__ == "__main__":
