@@ -7,6 +7,7 @@ import datetime
 import os
 from airflow.models import Variable
 import sqlalchemy
+from .token_manager import token
 # from sqlalchemy import MetaData, Table, create_engine
 # from sqlalchemy.dialects import postgresql
 
@@ -39,32 +40,33 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
             raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
     return True
 
-def refresh_api_token():
-        refresh_token = Variable.get("REFRESH_TOKEN")
-        base_64_id_secret = Variable.get("BASE_64_ID:SECRET")
+# def refresh_api_token():
+#         refresh_token = Variable.get("REFRESH_TOKEN")
+#         base_64_id_secret = Variable.get("BASE_64_ID:SECRET")
 
-        query = "https://accounts.spotify.com/api/token"
+#         query = "https://accounts.spotify.com/api/token"
 
-        response = requests.post(query,
-                                 data={"grant_type": "refresh_token",
-                                       "refresh_token": refresh_token},
-                                 headers={"Authorization": "Basic " + base_64_id_secret})
+#         response = requests.post(query,
+#                                  data={"grant_type": "refresh_token",
+#                                        "refresh_token": refresh_token},
+#                                  headers={"Authorization": "Basic " + base_64_id_secret})
 
-        response_json = response.json()
-        print(response_json)
+#         response_json = response.json()
+#         print(response_json)
 
-        return response_json["access_token"]
+#         return response_json["access_token"]
 
 def run_spotify_etl():
     database_location = 'postgresql+psycopg2://airflow:airflow@postgres/airflow'
 
-    token = refresh_api_token()
+    # when imported, token calls token.refresh(), so I shouldn't have to do that here again
+    access_token = token.access_token
 
     
     headers = {
         "Accept" : "application/json",
         "Content-Type" : "application/json",
-        "Authorization" : "Bearer {}".format(token)
+        "Authorization" : "Bearer {}".format(access_token)
     }
 
     # Convert time to Unix timestamp in miliseconds      
@@ -109,7 +111,6 @@ def run_spotify_etl():
     #     print("Data valid, proceed to Load stage")
 
     # Load
-
 
     engine = sqlalchemy.create_engine(database_location, executemany_mode='batch') # connect_args={'sslmode': 'require'}
     conn = engine.connect()
