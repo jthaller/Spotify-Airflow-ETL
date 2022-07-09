@@ -1,5 +1,3 @@
-import psycopg2
-import sqlalchemy
 import pandas as pd 
 from sqlalchemy.orm import sessionmaker
 import requests
@@ -8,10 +6,9 @@ from datetime import datetime
 import datetime
 import os
 from airflow.models import Variable
-import spotipy
-# from spotipy.oauth2 import SpotifyOAuth
-# from spotipy.oauth2 import SpotifyClientCredentials
-# from refresh import 
+import sqlalchemy
+# from sqlalchemy import MetaData, Table, create_engine
+# from sqlalchemy.dialects import postgresql
 
 
 # Generate your token here:  https://developer.spotify.com/console/get-recently-played/
@@ -41,23 +38,6 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
         if datetime.datetime.strptime(timestamp, '%Y-%m-%d') != yesterday:
             raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
     return True
-
-
-# def refresh_api_token():
-#     _client_id = Variable.get("SPOTIFY_CLIENT_ID")
-#     _client_secret = Variable.get("SPOTIFY_CLIENT_SECRET")
-#     auth_url = 'https://accounts.spotify.com/api/token'
-#     # client-credentials  'authorization-code', user-read-recently-played
-#     auth_data = {'grant_type': 'authorization-code',
-#                 'client_id': _client_id,
-#                 'client_secret': _client_secret,
-#                 'response_type': 'code'
-#                 }
-#     auth_response = requests.post(auth_url, data=auth_data)
-#     access_token = auth_response.json().get('access_token')
-#     print(access_token)
-#     print("HERE")
-#     return access_token
 
 def refresh_api_token():
         refresh_token = Variable.get("REFRESH_TOKEN")
@@ -91,10 +71,11 @@ def run_spotify_etl():
     today = datetime.datetime.now()
     yesterday = today - datetime.timedelta(days=30)
     yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
+    print(yesterday, yesterday_unix_timestamp)
 
-    # data = sp.current_user_recently_played(after=yesterday_unix_timestamp)
      # Download all songs you've listened to "after yesterday", which means in the last 24 hours      
     r = requests.get("https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp), headers=headers)
+    # data = sp.current_user_recently_played(after=yesterday_unix_timestamp)
     print(r)
     data = r.json()
 
@@ -129,11 +110,9 @@ def run_spotify_etl():
 
     # Load
 
-    # engine = sqlalchemy.create_engine(database_location)
+
     engine = sqlalchemy.create_engine(database_location, executemany_mode='batch') # connect_args={'sslmode': 'require'}
-    # conn = psycopg2.connect('my_played_tracks.sqlite')
     conn = engine.connect()
-    cursor = conn.cursor()
     
 
     sql_query = """
@@ -146,7 +125,7 @@ def run_spotify_etl():
     )
     """
 
-    cursor.execute(sql_query)
+    conn.execute(sql_query)
     print("Opened database successfully")
 
     try:

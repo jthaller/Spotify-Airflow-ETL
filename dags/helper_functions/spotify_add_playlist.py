@@ -4,7 +4,7 @@ from datetime import date
 import datetime
 import os
 from airflow.models import Variable
-from spotify_etl import refresh_api_token
+from .spotify_etl import refresh_api_token
 
 
 def create_playlist(self):
