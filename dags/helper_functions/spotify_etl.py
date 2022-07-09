@@ -8,6 +8,7 @@ import os
 from airflow.models import Variable
 import sqlalchemy
 from .token_manager import token
+from .database_manager import *
 # from sqlalchemy import MetaData, Table, create_engine
 # from sqlalchemy.dialects import postgresql
 
@@ -57,6 +58,8 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
 #         return response_json["access_token"]
 
 def run_spotify_etl():
+    db = PostrgresDB()
+    # database_location = db.database_location
     database_location = 'postgresql+psycopg2://airflow:airflow@postgres/airflow'
 
     # when imported, token calls token.refresh(), so I shouldn't have to do that here again
@@ -112,8 +115,8 @@ def run_spotify_etl():
 
     # Load
 
-    engine = sqlalchemy.create_engine(database_location, executemany_mode='batch') # connect_args={'sslmode': 'require'}
-    conn = engine.connect()
+    # engine = sqlalchemy.create_engine(database_location, executemany_mode='batch') # connect_args={'sslmode': 'require'}
+    # conn = engine.connect()
     
 
     sql_query = """
@@ -126,11 +129,12 @@ def run_spotify_etl():
     )
     """
 
-    conn.execute(sql_query)
+    # conn.execute(sql_query)
+    db.execute_query(sql_query)
     print("Opened database successfully")
 
     try:
-        song_df.to_sql("my_played_tracks", engine, index=False, if_exists='append')
+        song_df.to_sql("my_played_tracks", db.engine, index=False, if_exists='append') #used to just be engine before db manager
     except: # bad practice
         print("Data already exists in the database")
 
@@ -142,8 +146,8 @@ def run_spotify_etl():
     # df = pd.read_sql_query(sql_query2, conn)
     # print(df.head())
 
-    conn.close()
-    print("Close database successfully")
+    # conn.close()
+    # print("Close database successfully")
 
     # if __name__ == "__main__":
     #     run_spotify_etl()
