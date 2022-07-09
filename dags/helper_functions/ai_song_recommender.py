@@ -2,8 +2,6 @@ import requests
 import json
 from datetime import date
 import datetime
-import os
-from airflow.models import Variable
 from .token_manager import token
 from .ai_song_recommender import uris
 from .database_manager import *
@@ -24,15 +22,15 @@ class AISongRecommender():
         one_week_ago_unix_timestamp = int(one_week_ago.timestamp()) * 1000
 
         db = PostrgresDB()
-        
+
         query = """
         SELECT * LIMIT 10; 
         """ # CHANGE TO RETURN THE URIs
         df = db.create_pandas_table(query)
         return df
     
-
-
+    def create_recommendations(self):
+        pass
 
 if __name__ == "__main__":
     pass

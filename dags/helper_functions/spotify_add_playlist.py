@@ -5,11 +5,12 @@ import datetime
 import os
 from airflow.models import Variable
 from .token_manager import token
-from .ai_song_recommender import uris
+from .ai_song_recommender import AISongRecommender
 
-class SpotifyPlaylist:
+class SpotifyPlaylist():
+    """A class to grab the song recommendations and push them into a new playlist"""
 
-    def __init__():
+    def __init__(self):
         self.new_playlist_id = None
         self.access_token = token.access_token
         self.user_id = Variable.get("SPOTIFY_CLIENT_ID")
@@ -33,7 +34,7 @@ class SpotifyPlaylist:
         todayFormatted = today.strftime("%d/%m/%Y")
 
 
-        query = "https://api.spotify.com/v1/users/{}/playlists".format(spotify_user_id)
+        query = "https://api.spotify.com/v1/users/{}/playlists".format(self.user_id)
 
         request_body = json.dumps({
             "name": "AI Generated Playlist - {}".format(todayFormatted),
@@ -51,6 +52,11 @@ class SpotifyPlaylist:
         response_json = response.json()
         return response_json["id"]
 
+    def get_recommendations(self)->list:
+        recommender = AISongRecommender()
+        uris = recommender.create_recommendations()
+        return uris
+
     def add_to_playlist(self, uris: list):
         # add all songs to new playlist
         print("Adding songs...")
@@ -58,7 +64,7 @@ class SpotifyPlaylist:
         self.new_playlist_id = self.create_playlist()
 
         query = "https://api.spotify.com/v1/playlists/{}/tracks?uris={}".format(
-            self.new_playlist_id, self.tracks)
+            self.new_playlist_id, uris)
 
         response = requests.post(query,
                                  headers={"Content-Type": "application/json",
@@ -70,3 +76,8 @@ class SpotifyPlaylist:
 def create_spotify_playlist():
     print("creating spotify playlist")
     playlist = SpotifyPlaylist()
+    songs_to_add = playlist.get_recommendations()
+    playlist.add_to_playlist(songs_to_add)
+
+if __name__ == "__main__":
+    pass
