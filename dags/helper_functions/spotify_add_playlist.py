@@ -24,7 +24,7 @@ class SpotifyPlaylist():
         headers = {
             "Accept" : "application/json",
             "Content-Type" : "application/json",
-            "Authorization" : "Bearer {}".format(token)
+            "Authorization" : "Bearer {}".format(self.access_token)
         }
 
         # Create a new playlist

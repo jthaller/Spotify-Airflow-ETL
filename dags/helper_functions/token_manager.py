@@ -1,6 +1,4 @@
-from secrets import refresh_token, base_64
 import requests
-import json
 from airflow.models import Variable
 
 class Token:
