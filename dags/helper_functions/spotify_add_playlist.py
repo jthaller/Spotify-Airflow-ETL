@@ -13,7 +13,8 @@ class SpotifyPlaylist():
     def __init__(self):
         self.new_playlist_id = None
         self.access_token = token.access_token
-        self.user_id = Variable.get("SPOTIFY_CLIENT_ID")
+        self.user_id = Variable.get("SPOTIFY_PERSONAL_USER_ACCOUNT")
+        self.access_token = token.access_token
 
 
     def create_playlist(self):
@@ -43,13 +44,13 @@ class SpotifyPlaylist():
             }
         )
 
-        response = requests.post(query, data=request_body, headers={
-            "Content-Type": "application/json",
-            "Authorization": "Bearer {}".format(self.access_token)
-            }
+        response = requests.post(query,
+                                 data=request_body,
+                                 headers=headers
         )
 
         response_json = response.json()
+        print(response_json)
         return response_json["id"]
 
     def get_recommendations(self)->list:
@@ -63,14 +64,18 @@ class SpotifyPlaylist():
 
         self.new_playlist_id = self.create_playlist()
 
-        query = "https://api.spotify.com/v1/playlists/{}/tracks?uris={}".format(
-            self.new_playlist_id, uris)
+        uris_str = ','.join(uris)
+        print(uris_str)
+        api_arg = "https://api.spotify.com/v1/playlists/{}/tracks?uris={}".format(self.new_playlist_id, uris_str)
+        # api_arg = "https://api.spotify.com/playlists/{}/tracks".format(self.new_playlist_id) #, uris_str)
 
-        response = requests.post(query,
+        response = requests.post(api_arg,
+                                #  data={"uris": uris},
                                  headers={"Content-Type": "application/json",
-                                          "Authorization": "Bearer {}".format(self.spotify_token)
+                                          "Authorization": "Bearer {}".format(self.access_token)
                                           }
         )
+        print("Finished - Response JSON:", response )
 
 
 def create_spotify_playlist():

@@ -24,24 +24,29 @@ class AISongRecommender():
     
     def get_uri(self, title:str, artist=None) -> str:
         """Return the uri of the song as a string"""
+        
         headers = {
             "Accept" : "application/json",
             "Content-Type" : "application/json",
             "Authorization" : "Bearer {}".format(self.access_token)
         }
 
-        query=f"track:{title}"
+        query = f"track:{title}"
+
         r = requests.get("https://api.spotify.com/v1/search?type=track&include_external=audio&q={q}&limit=1".format(q=query), headers=headers)
         data = r.json()
-        uri = data['tracks']['items'][0]['uri']
-        print(data['tracks']['items'][0]['artists'])
+
+        try:
+            uri = data['tracks']['items'][0]['uri']
+            print(data['tracks']['items'][0]['artists'])
+        except KeyError:
+            print(f"No match for song: {title}")
+            print(f"response JSON: {data}")
+            return ""
         return uri
     
     def get_recent_songs(self) -> DataFrame:
         """ Return a list of URIs from the spotify listening history within the previous week """
-        # today = datetime.datetime.now()
-        # one_week_ago = today - datetime.timedelta(days=30)
-        # one_week_ago_unix_timestamp = int(one_week_ago.timestamp()) * 1000
 
         db = PostrgresDB()
 
@@ -64,13 +69,16 @@ class AISongRecommender():
         song_name = song[0]
         song_id = song[1]
         print ("Searching for songs similar to :", song_name)
-        print(type(self.model))
-        similar = self.model.most_similar(song_id, topn=n)
-        print(similar)
-        print ("Similar songs are as follow")
+        try:
+            similar = self.model.most_similar(song_id, topn=n)
+        except KeyError:
+            print(f"couldn't find {song_name}, {song_id} for some reason")
+            return [] #['56248', '564085'] #TODO: JUST A TEMPORTARY RETURN TO
+
+        print ("Similar songs are as follow:")
         for id, _ in similar:
             print (self.reverse_titles_dict[id])
-        return similar
+        return [self.reverse_titles_dict[id] for id, _ in similar]
 
 
     def create_recommendations(self) -> list:
@@ -93,6 +101,8 @@ class AISongRecommender():
         print("Found {}/{} songs".format(len(matched_songs_ids), songs_df.shape[0]))
 
         similar_songs = [self.similar_songs(song=song_tuple, n=2) for song_tuple in matched_songs_ids]
+        similar_songs =  [y for x in similar_songs for y in x]
+        print(similar_songs)
         uris = [self.get_uri(song) for song in similar_songs]
         print(uris)
         return uris

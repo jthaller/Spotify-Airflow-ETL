@@ -11,7 +11,7 @@ default_args = {
     'depends_on_past': False,
     'start_date': dt.datetime(2022, 6, 25),
     'email': ['dag-failure@thaller.dev'], # emails me if there's a dag failure
-    'email_on_failure': True,
+    'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
     'retry_delay': timedelta(minutes=1)
